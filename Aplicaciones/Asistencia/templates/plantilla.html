@@ -1,0 +1,202 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Recuperadora Logística - {% block title %}Inicio{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}{% endblock %}">
+
+    <!-- Favicons -->
+    <link href="{% static 'plantilla/assets/img/favicon.png' %}" rel="icon">
+    <link href="{% static 'plantilla/assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <!-- Vendor CSS Files -->
+    <link href="{% static 'plantilla/assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'plantilla/assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+    <link href="{% static 'plantilla/assets/vendor/aos/aos.css' %}" rel="stylesheet">
+    <link href="{% static 'plantilla/assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+    <link href="{% static 'plantilla/assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+
+    <!-- Additional CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.3/dist/sweetalert2.min.css" rel="stylesheet">
+
+    <!-- Main CSS File -->
+    <link href="{% static 'plantilla/assets/css/main.css' %}" rel="stylesheet">
+
+    <style>
+        /* Estilos personalizados para el header */
+        #header .container-fluid {
+            padding-left: 0 !important;
+        }
+        
+        #header .logo {
+            margin-left: 0 !important;
+            padding-left: 15px;
+        }
+        
+        #header .logo img {
+            max-height: 80px !important;
+            width: auto;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Header con IMAGEN de LOGO MÁS GRANDE Y A LA IZQUIERDA -->
+    <header id="header" class="header d-flex align-items-center fixed-top">
+        <div class="container-fluid position-relative d-flex align-items-center">
+            <a href="/" class="logo d-flex align-items-center me-auto">
+                <!-- ✅ LOGO MÁS GRANDE Y PEGADO A LA IZQUIERDA -->
+                <img src="{% static 'plantilla/assets/img/hero-carousel/logo.png' %}" alt="RLI S.A.S" class="img-fluid" style="max-height: 80px; width: auto;">
+            </a>
+
+            <nav id="navmenu" class="navmenu">
+                <ul>
+                    <li><a href="/" class="active">Inicio</a></li>
+                    <li><a href="{% url 'asistencia:asistencia' %}">Asistencia</a></li>
+                     <li><a href="{% url 'Descargue:dashboard' %}">Descargue</a></li>
+                        
+                    
+                </ul>
+                <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+            </nav>
+
+            <a class="btn-getstarted" href="#about">Get Started</a>
+        </div>
+    </header>
+
+    <!-- ✅ ESPACIO para navbar fijo + CARRUSEL COMPLETO -->
+    <main style="margin-top: 100px;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer id="footer" class="footer dark-background">
+        <div class="footer-newsletter">
+            <div class="container">
+                <div class="row justify-content-center text-center">
+                    <div class="col-lg-6">
+                        <h4>Suscríbete a nuestro boletín</h4>
+                        <p>Recibe las últimas noticias sobre nuestros productos y servicios</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container footer-top">
+            <div class="row gy-4">
+                <div class="col-lg-4 col-md-6 footer-about">
+                    <a href="/" class="d-flex align-items-center">
+                        <img src="{% static 'plantilla/assets/img/hero-carousel/logo.png' %}" alt="RLI S.A.S" style="height: 40px; width: auto;">
+                        <span class="sitename ms-2">RLI S.A.S</span>
+                    </a>
+                    <div class="footer-contact pt-3">
+                        <p>Guayaquil, Ecuador</p>
+                        <p class="mt-3"><strong>Teléfono:</strong> <span>+593 99 123 4567</span></p>
+                        <p><strong>Email:</strong> <span>info@rli.com.ec</span></p>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-md-3 footer-links">
+                    <h4>Enlaces útiles</h4>
+                    <ul>
+                        <li><i class="bi bi-chevron-right"></i> <a href="/">Inicio</a></li>
+                        <li><i class="bi bi-chevron-right"></i> <a href="{% url 'asistencia:asistencia' %}">Asistencia</a></li>
+                          <li><i class="bi bi-chevron-right"></i> <a href="{% url 'asistencia:asistencia' %}">Asistencia</a></li>
+                        <li><i class="bi bi-chevron-right"></i> <a href="{% url 'Descargue:dashboard' %}">Descargue</a></li>
+                        <li><i class="bi bi-chevron-right"></i> <a href="#">Servicios</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-2 col-md-3 footer-links">
+                    <h4>Nuestros Servicios</h4>
+                    <ul>
+                        <li><i class="bi bi-chevron-right"></i> <a href="#">Logística</a></li>
+                        <li><i class="bi bi-chevron-right"></i> <a href="#">Transporte</a></li>
+                        <li><i class="bi bi-chevron-right"></i> <a href="#">Almacenamiento</a></li>
+
+                    </ul>
+                </div>
+
+                <div class="col-lg-4 col-md-12">
+                    <h4>Síguenos</h4>
+                    <p>Recuperadora Logística Integral - Tu aliado en logística</p>
+                    <div class="social-links d-flex">
+                        <a href="#"><i class="bi bi-twitter"></i></a>
+                        <a href="#"><i class="bi bi-facebook"></i></a>
+                        <a href="#"><i class="bi bi-instagram"></i></a>
+                        <a href="#"><i class="bi bi-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container copyright text-center mt-4">
+            <p>© 2025 <strong class="px-1 sitename">RLI S.A.S</strong> - Todos los derechos reservados</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+    <!-- Notificaciones -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.3/dist/sweetalert2.all.min.js"></script>
+
+    <!-- Vendor JS -->
+    <script src="{% static 'plantilla/assets/vendor/aos/aos.js' %}"></script>
+    <script src="{% static 'plantilla/assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
+    <script src="{% static 'plantilla/assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+    <script src="{% static 'plantilla/assets/js/main.js' %}"></script>
+
+    <!-- Funciones utilitarias -->
+    <script>
+        function mostrarExito(mensaje) {
+            iziToast.success({title: 'Éxito', message: mensaje, position: 'topRight', timeout: 4000});
+        }
+        function mostrarError(mensaje) {
+            iziToast.error({title: 'Error', message: mensaje, position: 'topRight', timeout: 5000});
+        }
+        function confirmarEliminacion(titulo, texto, callback) {
+            Swal.fire({
+                title: titulo, text: texto, icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#95a5a6', confirmButtonText: 'Sí, eliminar'
+            }).then((result) => { if (result.isConfirmed) callback(); });
+        }
+    </script>
+
+    <!-- Scroll Top -->
+    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center">
+        <i class="bi bi-arrow-up-short"></i>
+    </a>
+    
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

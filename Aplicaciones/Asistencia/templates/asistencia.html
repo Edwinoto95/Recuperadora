@@ -1,0 +1,920 @@
+{% extends 'plantilla.html' %}
+
+{% block title %}Sistema de Asistencia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tabla-empleados { font-size: 1.2rem; }
+    .tabla-empleados tbody tr {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .tabla-empleados tbody tr:hover {
+        background: #e3f2fd !important;
+        transform: scale(1.02);
+    }
+    .empleado-row { padding: 15px !important; }
+    .estado-entrada { background: #d1ecf1; }
+    .estado-completo { 
+        background: #d4edda;
+        cursor: default !important;
+        opacity: 0.8;
+    }
+    .estado-completo:hover {
+        transform: none !important;
+        background: #d4edda !important;
+    }
+    .pulse-badge {
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+    .search-input {
+        font-size: 1.5rem;
+        padding: 20px;
+        border: 3px solid #667eea;
+        border-radius: 15px;
+    }
+    .hora-selector {
+        font-size: 3rem;
+        padding: 30px;
+        text-align: center;
+        border: 3px solid #667eea;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .hora-selector:hover {
+        background: #667eea;
+        color: white;
+        transform: scale(1.05);
+    }
+    .hora-selector.selected {
+        background: #27ae60;
+        color: white;
+        border-color: #27ae60;
+    }
+    .sin-empleados-disponibles {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+    }
+    .bg-gradient-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+    .turno-btn {
+        transition: all 0.3s ease;
+        border-width: 2px;
+        border-radius: 15px;
+    }
+    .turno-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<br>
+<br>
+<br>
+<br>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+    
+        <h3><i class="fas fa-clipboard-check me-2"></i>Control de Asistencia</h3>
+        <div class="d-flex gap-3">
+            <span class="badge bg-primary fs-6"><i class="fas fa-users me-1"></i>{{ total_empleados }}</span>
+            <span class="badge bg-success fs-6"><i class="fas fa-user-check me-1"></i>{{ total_presentes }}</span>
+            <span class="badge bg-warning fs-6"><i class="fas fa-clock me-1"></i><span id="reloj"></span></span>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#registro">
+                <i class="fas fa-clipboard-check me-2"></i>Registro
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#empleados">
+                <i class="fas fa-users me-2"></i>Empleados
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reportes">
+                <i class="fas fa-chart-bar me-2"></i>Reportes
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- TAB REGISTRO -->
+        <div class="tab-pane fade show active" id="registro">
+            <!-- Paso 1 -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-check me-2"></i>Paso 1: Coordinador - Registrar entrada del día</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Seleccione la hora de entrada (5:00 AM o 6:00 AM) y los empleados que trabajan hoy
+                    </p>
+                    <button class="btn btn-success btn-lg" onclick="abrirSeleccion()">
+                        <i class="fas fa-clipboard-check me-2"></i>Registrar Entradas del Día
+                    </button>
+                    {% if empleados.count == 0 and total_presentes > 0 %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Todos los empleados ya están registrados para hoy</strong>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Paso 2 -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-hand-pointer me-2"></i>Paso 2: Empleados - Marcar salida</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Los empleados buscan su nombre y hacen clic para registrar su salida
+                    </p>
+                    <input type="text" id="buscarEmpleado" class="form-control search-input mb-4" 
+                           placeholder="🔍 Buscar tu nombre o cédula..." autofocus>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover tabla-empleados">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th width="40%">EMPLEADO</th>
+                                    <th width="20%">CARGO</th>
+                                    <th width="15%">ENTRADA</th>
+                                    <th width="25%">SALIDA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaEmpleadosBody">
+                                {% for asist in asistencias_dict.values %}
+                                <tr class="empleado-row {% if asist.registro_completo %}estado-completo{% else %}estado-entrada{% endif %}"
+                                    data-id="{{ asist.empleado.id }}"
+                                    data-nombre="{{ asist.empleado.nombre_completo|lower }}"
+                                    data-cedula="{{ asist.empleado.cedula }}"
+                                    data-registro-id="{{ asist.id }}"
+                                    {% if not asist.registro_completo %}onclick="abrirModalSalida({{ asist.empleado.id }}, '{{ asist.empleado.nombre_completo }}')"{% endif %}>
+                                    <td><strong>{{ asist.empleado.nombre_completo }}</strong><br><small class="text-muted">{{ asist.empleado.cedula }}</small></td>
+                                    <td>{{ asist.empleado.cargo }}</td>
+                                    <td><span class="badge bg-success">{{ asist.hora_entrada|time:"H:i" }}</span></td>
+                                    <td>
+                                        {% if asist.hora_salida %}
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span class="badge bg-danger">{{ asist.hora_salida|time:"H:i" }}</span>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); editarRegistro({{ asist.id }}, {{ asist.empleado.id }}, '{{ asist.empleado.nombre_completo }}', '{{ asist.hora_salida|time:"H:i" }}')" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); eliminarRegistro({{ asist.id }}, '{{ asist.empleado.nombre_completo }}')" title="Eliminar">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark pulse-badge">
+                                                <i class="fas fa-hand-pointer"></i> Clic para marcar
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-5">
+                                        <i class="fas fa-info-circle fa-3x mb-3"></i><br>
+                                        <h5>Primero registre las entradas del día en el Paso 1</h5>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB EMPLEADOS -->
+        <div class="tab-pane fade" id="empleados">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span><i class="fas fa-users me-2"></i>Gestión de Empleados</span>
+                    <button class="btn btn-light btn-sm" onclick="nuevoEmpleado()">
+                        <i class="fas fa-user-plus me-2"></i>Nuevo
+                    </button>
+                </div>
+                <div class="card-body">
+                    <table id="tablaEmpleados" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Cédula</th>
+                                <th>Nombres</th>
+                                <th>Apellidos</th>
+                                <th>Cargo</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB REPORTES -->
+        <div class="tab-pane fade" id="reportes">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-line me-2"></i>Reportes
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="fechaInicio" value="{{ fecha_actual|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="fechaFin" value="{{ fecha_actual|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary" onclick="filtrarReporte()">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="btn-group">
+                                <button class="btn btn-success" onclick="reporteHoy()">Hoy</button>
+                                <button class="btn btn-info" onclick="reporteSemana()">Semana</button>
+                                <button class="btn btn-warning" onclick="reporteMes()">Mes</button>
+                            </div>
+                        </div>
+                    </div>
+                    <table id="tablaReportes" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Empleado</th>
+                                <th>Fecha</th>
+                                <th>Entrada</th>
+                                <th>Salida</th>
+                                <th>Duración</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Selección de Entrada -->
+<div class="modal fade" id="modalSeleccion">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5><i class="fas fa-clipboard-check me-2"></i>Registrar Entrada de Trabajadores</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Paso 1:</strong> Seleccione la hora de entrada (5:00 AM o 6:00 AM)<br>
+                    <strong>Paso 2:</strong> Seleccione los empleados que trabajan hoy
+                </div>
+                
+                <!-- Selector de Hora -->
+                <h5 class="mb-3"><i class="fas fa-clock me-2"></i>Hora de Entrada:</h5>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="hora-selector" data-hora="05:00" onclick="seleccionarHora('05:00', this)">
+                            <i class="fas fa-sun"></i><br>
+                            <strong>5:00 AM</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="hora-selector" data-hora="06:00" onclick="seleccionarHora('06:00', this)">
+                            <i class="fas fa-sun"></i><br>
+                            <strong>6:00 AM</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Selector de Empleados -->
+                <h5 class="mb-3"><i class="fas fa-users me-2"></i>Empleados Disponibles:</h5>
+                
+                {% if empleados.count > 0 %}
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <input type="text" id="buscarEmpleadoModal" class="form-control form-control-lg" 
+                               placeholder="🔍 Buscar empleado por nombre o cédula..." 
+                               style="border: 2px solid #667eea; border-radius: 10px;">
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-secondary btn-lg w-100" onclick="seleccionarTodos()">
+                            <i class="fas fa-check-double me-2"></i>Seleccionar Todos
+                        </button>
+                    </div>
+                </div>
+                <div class="row" id="listaEmpleados">
+                    {% for emp in empleados %}
+                    <div class="col-md-6 mb-2 empleado-item" 
+                         data-nombre="{{ emp.nombre_completo|lower }}"
+                         data-cedula="{{ emp.cedula }}"
+                         data-cargo="{{ emp.cargo|lower }}">
+                        <div class="form-check">
+                            <input class="form-check-input empleado-check" type="checkbox" 
+                                   value="{{ emp.id }}" id="emp{{ emp.id }}">
+                            <label class="form-check-label" for="emp{{ emp.id }}">
+                                <strong>{{ emp.nombre_completo }}</strong> - {{ emp.cargo }}
+                                <br><small class="text-muted">{{ emp.cedula }}</small>
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div id="noResultados" class="alert alert-warning text-center" style="display: none;">
+                    <i class="fas fa-search me-2"></i>No se encontraron empleados con ese criterio de búsqueda
+                </div>
+                {% else %}
+                <div class="sin-empleados-disponibles">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h4>Todos los empleados ya están registrados para hoy</h4>
+                    <p class="text-muted mb-0">No hay más empleados disponibles para agregar en este momento.</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                {% if empleados.count > 0 %}
+                <button class="btn btn-success btn-lg" onclick="guardarSeleccion()">
+                    <i class="fas fa-check-circle me-2"></i>Confirmar y Registrar Entradas
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Marcar Salida Simplificado -->
+<div class="modal fade" id="modalSalida">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-gradient-danger text-white border-0">
+                <h4 class="mb-0"><i class="fas fa-sign-out-alt me-2"></i>Marcar Salida</h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-circle fa-3x text-primary mb-3"></i>
+                    <h3 id="nombreEmpleadoSalida" class="fw-bold"></h3>
+                </div>
+                <input type="hidden" id="empleadoIdSalida">
+                
+                <div class="row g-3">
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 turno-btn" onclick="registrarSalidaRapida('11:00')">
+                            <i class="fas fa-sun fa-2x mb-2"></i>
+                            <strong style="font-size: 1.5rem;">11:00 AM</strong>
+                            <small class="text-muted">Turno 1</small>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 turno-btn" onclick="registrarSalidaRapida('14:30')">
+                            <i class="fas fa-cloud-sun fa-2x mb-2"></i>
+                            <strong style="font-size: 1.5rem;">2:30 PM</strong>
+                            <small class="text-muted">Turno 2</small>
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-success btn-lg w-100 d-flex align-items-center justify-content-center py-3 turno-btn" onclick="registrarSalidaActual()">
+                            <i class="fas fa-clock me-2 fa-lg"></i>
+                            <span style="font-size: 1.2rem;">Usar Hora Actual</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Empleado -->
+<div class="modal fade" id="modalEmpleado">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5><i class="fas fa-user-edit me-2"></i><span id="tituloEmpleado">Nuevo Empleado</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEmpleado">
+                    {% csrf_token %}
+                    <input type="hidden" id="empleado_id">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label>Cédula *</label>
+                            <input type="text" class="form-control" id="cedula" required maxlength="10">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Teléfono *</label>
+                            <input type="text" class="form-control" id="telefono" required maxlength="10">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Nombres *</label>
+                            <input type="text" class="form-control" id="nombres" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Apellidos *</label>
+                            <input type="text" class="form-control" id="apellidos" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Cargo *</label>
+                            <input type="text" class="form-control" id="cargo" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Email</label>
+                            <input type="email" class="form-control" id="email">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Fecha Ingreso *</label>
+                            <input type="date" class="form-control" id="fecha_ingreso" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarEmpleado()">
+                    <i class="fas fa-save me-2"></i>Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Reloj
+function actualizarReloj() {
+    const ahora = new Date();
+    document.getElementById('reloj').textContent = ahora.toLocaleTimeString('es-EC');
+}
+setInterval(actualizarReloj, 1000);
+actualizarReloj();
+
+// Buscador
+$('#buscarEmpleado').on('keyup', function() {
+    const val = $(this).val().toLowerCase();
+    $('#tablaEmpleadosBody tr').each(function() {
+        const nombre = $(this).data('nombre') || '';
+        const cedula = $(this).data('cedula') || '';
+        if (nombre.includes(val) || cedula.includes(val)) {
+            $(this).show();
+        } else {
+            $(this).hide();
+        }
+    });
+});
+
+// Buscador en el modal de selección
+$('#buscarEmpleadoModal').on('keyup', function() {
+    const val = $(this).val().toLowerCase();
+    let visibles = 0;
+    
+    $('.empleado-item').each(function() {
+        const nombre = $(this).data('nombre') || '';
+        const cedula = $(this).data('cedula') || '';
+        const cargo = $(this).data('cargo') || '';
+        
+        if (nombre.includes(val) || cedula.includes(val) || cargo.includes(val)) {
+            $(this).show();
+            visibles++;
+        } else {
+            $(this).hide();
+        }
+    });
+    
+    // Mostrar mensaje si no hay resultados
+    if (visibles === 0) {
+        $('#noResultados').show();
+        $('#listaEmpleados').hide();
+    } else {
+        $('#noResultados').hide();
+        $('#listaEmpleados').show();
+    }
+});
+
+// Variables globales
+let horaEntradaSeleccionada = '';
+
+// Selección de trabajadores
+function abrirSeleccion() {
+    horaEntradaSeleccionada = '';
+    $('.hora-selector').removeClass('selected');
+    $('.empleado-check').prop('checked', false);
+    $('#buscarEmpleadoModal').val('');
+    $('.empleado-item').show();
+    $('#noResultados').hide();
+    $('#listaEmpleados').show();
+    $('#modalSeleccion').modal('show');
+}
+
+function seleccionarHora(hora, elemento) {
+    horaEntradaSeleccionada = hora;
+    $('.hora-selector').removeClass('selected');
+    $(elemento).addClass('selected');
+}
+
+function seleccionarTodos() {
+    $('.empleado-check').prop('checked', true);
+}
+
+function guardarSeleccion() {
+    if (!horaEntradaSeleccionada) {
+        mostrarAdvertencia('Seleccione la hora de entrada (5:00 AM o 6:00 AM)');
+        return;
+    }
+    
+    const seleccionados = [];
+    $('.empleado-check:checked').each(function() {
+        seleccionados.push($(this).val());
+    });
+    
+    if (seleccionados.length === 0) {
+        mostrarAdvertencia('Seleccione al menos un empleado');
+        return;
+    }
+    
+    $.ajax({
+        url: '{% url "asistencia:seleccionar_trabajadores" %}',
+        method: 'POST',
+        data: {
+            empleados_ids: seleccionados,
+            hora_entrada: horaEntradaSeleccionada,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(resp) {
+            if (resp.success) {
+                mostrarExito(resp.message);
+                $('#modalSeleccion').modal('hide');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                mostrarError(resp.message);
+            }
+        }
+    });
+}
+
+// Marcar salida - SIMPLIFICADO
+function abrirModalSalida(empId, nombre) {
+    $('#empleadoIdSalida').val(empId);
+    $('#nombreEmpleadoSalida').text(nombre);
+    $('#modalSalida').modal('show');
+}
+
+function registrarSalidaRapida(hora) {
+    const empId = $('#empleadoIdSalida').val();
+    const nombre = $('#nombreEmpleadoSalida').text();
+    
+    Swal.fire({
+        title: '¿Confirmar salida?',
+        html: `<strong>${nombre}</strong><br>Hora: <strong>${hora}</strong>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, registrar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            ejecutarRegistroSalida(empId, hora, nombre);
+        }
+    });
+}
+
+function registrarSalidaActual() {
+    const ahora = new Date();
+    const horas = String(ahora.getHours()).padStart(2, '0');
+    const minutos = String(ahora.getMinutes()).padStart(2, '0');
+    const horaActual = `${horas}:${minutos}`;
+    
+    const empId = $('#empleadoIdSalida').val();
+    const nombre = $('#nombreEmpleadoSalida').text();
+    
+    Swal.fire({
+        title: '¿Confirmar salida?',
+        html: `<strong>${nombre}</strong><br>Hora: <strong>${horaActual}</strong>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, registrar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            ejecutarRegistroSalida(empId, horaActual, nombre);
+        }
+    });
+}
+
+function ejecutarRegistroSalida(empId, horaSalida, nombre) {
+    $.ajax({
+        url: '{% url "asistencia:marcar_salida" %}',
+        method: 'POST',
+        data: {
+            empleado_id: empId,
+            hora_salida: horaSalida,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(resp) {
+            if (resp.success) {
+                $('#modalSalida').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡SALIDA REGISTRADA!',
+                    html: `<div style="font-size: 1.2rem;">
+                        <strong>${nombre}</strong><br>
+                        <i class="fas fa-clock"></i> ${horaSalida}<br>
+                        <span class="text-success">✓ Registro completado</span>
+                    </div>`,
+                    confirmButtonText: 'OK',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    confirmButtonColor: '#28a745'
+                }).then(() => location.reload());
+            } else {
+                mostrarError(resp.message);
+            }
+        },
+        error: function() {
+            mostrarError('Error al registrar la salida');
+        }
+    });
+}
+
+// Editar registro
+function editarRegistro(registroId, empId, nombre, horaSalidaActual) {
+    Swal.fire({
+        title: 'Editar Salida',
+        html: `
+            <div class="mb-3">
+                <strong>${nombre}</strong><br>
+                <small class="text-muted">Hora actual: ${horaSalidaActual}</small>
+            </div>
+            <label class="form-label">Nueva hora de salida:</label>
+            <input type="time" id="nuevaHoraSalida" class="form-control form-control-lg text-center" value="${horaSalidaActual}" style="font-size: 1.5rem;">
+        `,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Guardar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ffc107',
+        preConfirm: () => {
+            const nuevaHora = document.getElementById('nuevaHoraSalida').value;
+            if (!nuevaHora) {
+                Swal.showValidationMessage('Debe seleccionar una hora');
+                return false;
+            }
+            return nuevaHora;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '{% url "asistencia:marcar_salida" %}',
+                method: 'POST',
+                data: {
+                    empleado_id: empId,
+                    hora_salida: result.value,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(resp) {
+                    if (resp.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Actualizado!',
+                            text: `Hora cambiada a ${result.value}`,
+                            timer: 2000,
+                            confirmButtonColor: '#28a745'
+                        }).then(() => location.reload());
+                    } else {
+                        mostrarError(resp.message);
+                    }
+                }
+            });
+        }
+    });
+}
+
+// Eliminar registro
+function eliminarRegistro(registroId, nombre) {
+    Swal.fire({
+        title: '¿Eliminar registro?',
+        html: `Se eliminará el registro de salida de:<br><strong>${nombre}</strong>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: `/asistencias/eliminar/${registroId}/`,
+                method: 'POST',
+                data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+                success: function(resp) {
+                    if (resp.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Eliminado!',
+                            text: 'El registro ha sido eliminado correctamente',
+                            timer: 2000,
+                            confirmButtonColor: '#28a745'
+                        }).then(() => location.reload());
+                    } else {
+                        mostrarError(resp.message || 'Error al eliminar');
+                    }
+                },
+                error: function() {
+                    mostrarError('Error al eliminar el registro');
+                }
+            });
+        }
+    });
+}
+
+// DataTables
+let tablaEmpleados, tablaReportes;
+
+$(document).ready(function() {
+    tablaEmpleados = $('#tablaEmpleados').DataTable({
+        ajax: { url: '{% url "asistencia:listar_empleados" %}', dataSrc: 'data' },
+        columns: [
+            { data: 'cedula' },
+            { data: 'nombres' },
+            { data: 'apellidos' },
+            { data: 'cargo' },
+            { data: 'activo', render: d => d ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Inactivo</span>' },
+            { data: null, render: d => `
+                <button class="btn btn-sm btn-warning" onclick="editarEmpleado(${d.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger" onclick="eliminarEmpleado(${d.id}, '${d.nombre_completo}')"><i class="fas fa-trash"></i></button>
+            `}
+        ],
+        language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'excel', className: 'btn btn-success btn-sm' },
+            { extend: 'pdf', className: 'btn btn-danger btn-sm' }
+        ]
+    });
+
+    tablaReportes = $('#tablaReportes').DataTable({
+        ajax: {
+            url: '{% url "asistencia:listar_asistencias" %}',
+            data: d => {
+                d.fecha_inicio = $('#fechaInicio').val();
+                d.fecha_fin = $('#fechaFin').val();
+            },
+            dataSrc: 'data'
+        },
+        columns: [
+            { data: 'empleado' },
+            { data: 'fecha' },
+            { data: 'hora_entrada' },
+            { data: 'hora_salida' },
+            { data: 'duracion' },
+            { data: null, render: d => `<button class="btn btn-sm btn-danger" onclick="eliminarAsistencia(${d.id})"><i class="fas fa-trash"></i></button>` }
+        ],
+        language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'excel', className: 'btn btn-success btn-sm' },
+            { extend: 'pdf', className: 'btn btn-danger btn-sm' }
+        ]
+    });
+});
+
+// CRUD Empleados
+function nuevoEmpleado() {
+    $('#formEmpleado')[0].reset();
+    $('#empleado_id').val('');
+    $('#tituloEmpleado').text('Nuevo Empleado');
+    $('#modalEmpleado').modal('show');
+}
+
+function editarEmpleado(id) {
+    $.ajax({
+        url: `/empleados/obtener/${id}/`,
+        success: function(resp) {
+            if (resp.success) {
+                const e = resp.data;
+                $('#empleado_id').val(e.id);
+                $('#cedula').val(e.cedula);
+                $('#nombres').val(e.nombres);
+                $('#apellidos').val(e.apellidos);
+                $('#cargo').val(e.cargo);
+                $('#telefono').val(e.telefono);
+                $('#email').val(e.email);
+                $('#fecha_ingreso').val(e.fecha_ingreso);
+                $('#tituloEmpleado').text('Editar Empleado');
+                $('#modalEmpleado').modal('show');
+            }
+        }
+    });
+}
+
+function guardarEmpleado() {
+    $.ajax({
+        url: '{% url "asistencia:guardar_empleado" %}',
+        method: 'POST',
+        data: {
+            empleado_id: $('#empleado_id').val(),
+            cedula: $('#cedula').val(),
+            nombres: $('#nombres').val(),
+            apellidos: $('#apellidos').val(),
+            cargo: $('#cargo').val(),
+            telefono: $('#telefono').val(),
+            email: $('#email').val(),
+            fecha_ingreso: $('#fecha_ingreso').val(),
+            activo: 'true',
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(resp) {
+            if (resp.success) {
+                mostrarExito(resp.message);
+                $('#modalEmpleado').modal('hide');
+                tablaEmpleados.ajax.reload();
+            }
+        }
+    });
+}
+
+function eliminarEmpleado(id, nombre) {
+    confirmarEliminacion('¿Eliminar?', `¿Eliminar a ${nombre}?`, function() {
+        $.ajax({
+            url: `/empleados/eliminar/${id}/`,
+            method: 'POST',
+            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+            success: function(resp) {
+                if (resp.success) {
+                    mostrarExito(resp.message);
+                    tablaEmpleados.ajax.reload();
+                }
+            }
+        });
+    });
+}
+
+// Reportes
+function filtrarReporte() { tablaReportes.ajax.reload(); }
+function reporteHoy() {
+    const hoy = new Date().toISOString().split('T')[0];
+    $('#fechaInicio, #fechaFin').val(hoy);
+    tablaReportes.ajax.reload();
+}
+function reporteSemana() {
+    const hoy = new Date();
+    const hace7 = new Date(hoy - 7*24*60*60*1000);
+    $('#fechaInicio').val(hace7.toISOString().split('T')[0]);
+    $('#fechaFin').val(hoy.toISOString().split('T')[0]);
+    tablaReportes.ajax.reload();
+}
+function reporteMes() {
+    const hoy = new Date();
+    $('#fechaInicio').val(new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0]);
+    $('#fechaFin').val(hoy.toISOString().split('T')[0]);
+    tablaReportes.ajax.reload();
+}
+
+function eliminarAsistencia(id) {
+    confirmarEliminacion('¿Eliminar?', '¿Eliminar esta asistencia?', function() {
+        $.ajax({
+            url: `/asistencias/eliminar/${id}/`,
+            method: 'POST',
+            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+            success: function(resp) {
+                if (resp.success) {
+                    mostrarExito(resp.message);
+                    tablaReportes.ajax.reload();
+                    location.reload();
+                }
+            }
+        });
+    });
+}
+</script>
+{% endblock %}

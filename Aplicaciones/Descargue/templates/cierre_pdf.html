@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Descargue {{ cierre.fecha|date:"d/m/Y" }}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:10.5px;color:#222;background:#fff;}
+
+    .header{background:#1a3a5c;color:#fff;padding:14px 18px;margin-bottom:14px;}
+    .header h2{font-size:15px;color:#f0a500;margin-bottom:2px;}
+    .header .sub{font-size:10px;opacity:.8;}
+    .header .fecha{font-size:18px;font-weight:800;float:right;margin-top:-28px;}
+
+    .totales{display:flex;gap:10px;margin-bottom:14px;}
+    .tbox{flex:1;border:1.5px solid #1a3a5c;border-radius:5px;padding:8px;text-align:center;}
+    .tbox .l{font-size:9px;color:#666;text-transform:uppercase;margin-bottom:2px;}
+    .tbox .v{font-size:16px;font-weight:800;color:#1a3a5c;}
+
+    .emp-hdr{background:#1a3a5c;color:#fff;padding:6px 12px;
+      display:flex;justify-content:space-between;font-size:10px;
+      border-radius:4px 4px 0 0;margin-top:12px;}
+
+    table{width:100%;border-collapse:collapse;font-size:10px;}
+    th{background:#e8edf5;padding:5px 8px;border-bottom:1.5px solid #cdd5e0;text-align:left;}
+    td{padding:4px 8px;border-bottom:1px solid #eee;}
+    tfoot td{background:#f0f4e8;font-weight:700;}
+
+    .bc{background:#d4edda;color:#155724;padding:1px 6px;border-radius:8px;font-size:9px;}
+    .bi{background:#fff3cd;color:#856404;padding:1px 6px;border-radius:8px;font-size:9px;}
+    .be{background:#f8d7da;color:#721c24;padding:1px 6px;border-radius:8px;font-size:9px;}
+
+    .obs-cierre{background:#fff3cd;border:1px solid #ffc107;padding:6px 10px;
+      border-radius:4px;font-size:10px;margin-bottom:10px;}
+
+    .firmas{display:flex;gap:60px;justify-content:center;margin-top:40px;}
+    .firma{text-align:center;width:200px;}
+    .firma .linea{border-top:1px solid #333;padding-top:6px;margin-top:45px;font-size:10px;}
+
+    @page{margin:1.5cm;}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h2>{{ empresa_nombre }}</h2>
+  <div class="sub">Control de descargue de mercancía — {{ cierre.fecha|date:"l d/m/Y"|title }}</div>
+  <div class="fecha">{{ cierre.fecha|date:"d/m/Y" }}</div>
+  {% if cierre.hora_cierre %}
+  <div class="sub" style="margin-top:3px;clear:right;">
+    Cierre: {{ cierre.hora_cierre|date:"H:i" }} &nbsp;|&nbsp; {{ total_empresas }} empresa(s)
+  </div>
+  {% endif %}
+</div>
+
+<div class="totales">
+  <div class="tbox">
+    <div class="l">Total Palets</div>
+    <div class="v">{{ cierre.total_palets }}</div>
+  </div>
+  <div class="tbox">
+    <div class="l">Empresas</div>
+    <div class="v">{{ total_empresas }}</div>
+  </div>
+  <div class="tbox">
+    <div class="l">Registros</div>
+    <div class="v">{{ total_registros }}</div>
+  </div>
+  <div class="tbox">
+    <div class="l">Estado</div>
+    <div class="v">{{ cierre.get_estado_display }}</div>
+  </div>
+</div>
+
+{% if cierre.observaciones %}
+<div class="obs-cierre"><strong>Observaciones:</strong> {{ cierre.observaciones }}</div>
+{% endif %}
+
+{% for item in empresas_data %}
+<div class="emp-hdr">
+  <span><strong>{{ item.empresa.nombre }}</strong></span>
+  <span><strong>{{ item.subtotal_palets }} pal.</strong> | {{ item.registros|length }} descargue(s)</span>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th>Hora</th>
+      <th>Chofer</th>
+      <th>Placa</th>
+      <th>Producto</th>
+      <th>Tipo</th>
+      <th style="text-align:right">Pal.comp.</th>
+      <th style="text-align:right">Unid.suel.</th>
+      <th style="text-align:right">Total pal.</th>
+      <th>Fin est.</th>
+      <th>Obs.</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for reg in item.registros %}
+    <tr>
+      <td>{{ reg.hora|date:"H:i" }}</td>
+      <td>
+        {{ reg.chofer_nombre }}<br>
+        <span style="color:#999;font-size:9px;">{{ reg.chofer_telefono }}</span>
+      </td>
+      <td>{{ reg.placa }}</td>
+      <td>{{ reg.producto.nombre }}</td>
+      <td>
+        {% if reg.tipo == 'completo' %}<span class="bc">Completo</span>
+        {% elif reg.tipo == 'incompleto' %}<span class="bi">Incompleto</span>
+        {% else %}<span class="be">Especial</span>{% endif %}
+      </td>
+      <td style="text-align:right">{{ reg.palets_completos }}</td>
+      <td style="text-align:right;color:#999">{{ reg.unidades_sueltas }}</td>
+      <td style="text-align:right;font-weight:700;color:#1a3a5c">{{ reg.palets_equivalentes }}</td>
+      <td>{% if reg.hora_fin_estimada %}{{ reg.hora_fin_estimada|date:"H:i" }}{% else %}—{% endif %}</td>
+      <td style="font-size:9px;color:#666">{{ reg.observacion }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="7" style="text-align:right;">Subtotal {{ item.empresa.nombre }}:</td>
+      <td style="text-align:right;">{{ item.subtotal_palets }}</td>
+      <td colspan="2"></td>
+    </tr>
+  </tfoot>
+</table>
+{% endfor %}
+
+<div class="firmas">
+  <div class="firma">
+    <div class="linea">
+      <strong>{{ empresa_nombre }}</strong><br>
+      Firma autorizada
+    </div>
+  </div>
+  <div class="firma">
+    <div class="linea">
+      <strong>Recibido conforme</strong><br>
+      &nbsp;
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

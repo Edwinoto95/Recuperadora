@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Comprobante de Descargue</title>
+  <style>
+    :root{--azul:#1a3a5c;--oro:#f0a500;--verde:#198754;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#eef1f5;font-family:'Segoe UI',Arial,sans-serif;font-size:14px;
+      display:flex;justify-content:center;padding:20px 10px;}
+
+    .factura{background:#fff;width:100%;max-width:480px;border-radius:12px;
+      overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+
+    /* CABECERA */
+    .cab{background:var(--azul);color:#fff;padding:18px 20px 14px;}
+    .cab h1{font-size:1.1rem;font-weight:800;color:var(--oro);margin-bottom:2px;}
+    .cab .sub{font-size:.75rem;opacity:.75;}
+    .cab .folio{font-size:2rem;font-weight:800;color:var(--oro);text-align:right;
+      float:right;margin-top:-38px;line-height:1;}
+    .cab .folio small{display:block;font-size:.6rem;opacity:.7;font-weight:400;}
+
+    /* DATOS CHOFER */
+    .chofer-bar{background:#f0f7ff;border-bottom:2px solid #dde8f5;padding:10px 20px;
+      display:flex;align-items:center;gap:12px;}
+    .avatar{width:44px;height:44px;background:var(--azul);border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.3rem;color:var(--oro);flex-shrink:0;}
+    .chofer-info .nom{font-weight:800;font-size:15px;color:var(--azul);}
+    .chofer-info .det{font-size:12px;color:#666;}
+
+    /* SECCIÓN */
+    .sec{padding:14px 20px;border-bottom:1px solid #eef1f5;}
+    .sec-tit{font-size:.65rem;text-transform:uppercase;font-weight:700;
+      color:var(--azul);letter-spacing:.5px;margin-bottom:8px;}
+
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .info-item .lbl{font-size:11px;color:#888;}
+    .info-item .val{font-size:14px;font-weight:700;color:#222;}
+
+    /* TOTALES */
+    .totales{background:var(--azul);color:#fff;padding:14px 20px;}
+    .tot-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+    .tot-row .t-lbl{font-size:.75rem;opacity:.7;}
+    .tot-row .t-val{font-size:15px;font-weight:800;color:var(--oro);}
+    .tot-row.grande .t-val{font-size:1.6rem;}
+
+    /* TIEMPO */
+    .tiempo-bar{background:#fff8e8;border-bottom:2px solid #ffe082;padding:10px 20px;
+      display:flex;justify-content:space-between;align-items:center;}
+    .tiempo-bar .ini,.tiempo-bar .fin{text-align:center;}
+    .tiempo-bar .hora{font-size:1.3rem;font-weight:800;color:var(--azul);}
+    .tiempo-bar .sub{font-size:11px;color:#888;}
+    .flecha{font-size:1.5rem;color:var(--oro);}
+
+    /* BADGE TIPO */
+    .tipo-badge{display:inline-block;padding:3px 12px;border-radius:20px;
+      font-size:12px;font-weight:700;}
+    .tipo-c{background:#d4edda;color:#155724;}
+    .tipo-i{background:#fff3cd;color:#856404;}
+    .tipo-e{background:#f8d7da;color:#721c24;}
+
+    /* PIE */
+    .pie{padding:12px 20px;text-align:center;font-size:11px;color:#999;
+      border-top:1px solid #eef1f5;}
+    .pie strong{color:var(--azul);}
+
+    /* BOTONES (solo pantalla) */
+    .acciones{padding:14px 20px;display:flex;gap:8px;}
+    .btn-imp{flex:1;background:var(--azul);color:#fff;border:none;border-radius:7px;
+      padding:10px;font-weight:700;font-size:13px;cursor:pointer;}
+    .btn-imp:hover{background:#0f2a47;}
+    .btn-wa{flex:1;background:#25d366;color:#fff;border:none;border-radius:7px;
+      padding:10px;font-weight:700;font-size:13px;cursor:pointer;}
+    .btn-wa:hover{background:#1da851;}
+
+    @media print{
+      body{background:#fff;padding:0;}
+      .factura{box-shadow:none;border-radius:0;}
+      .acciones{display:none;}
+    }
+  </style>
+</head>
+<body>
+
+<div class="factura">
+
+  <!-- CABECERA -->
+  <div class="cab">
+    <h1>{{ empresa_nombre }}</h1>
+    <div class="sub">Comprobante de Descargue de Mercancía</div>
+    <div class="folio">
+      #{{ reg.id }}
+      <small>N° de registro</small>
+    </div>
+    <div style="clear:both;"></div>
+  </div>
+
+  <!-- CHOFER -->
+  <div class="chofer-bar">
+    <div class="avatar"><i class="fa fa-user"></i></div>
+    <div class="chofer-info">
+      <div class="nom">{{ reg.chofer_nombre }}</div>
+      <div class="det">
+        {% if reg.placa %}<strong>Placa:</strong> {{ reg.placa }} &nbsp;|&nbsp; {% endif %}
+        <i class="fab fa-whatsapp"></i> {{ reg.chofer_telefono }}
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPRESA Y FECHA -->
+  <div class="sec">
+    <div class="sec-tit">Datos del descargue</div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="lbl">Empresa</div>
+        <div class="val">{{ reg.empresa.nombre }}</div>
+      </div>
+      <div class="info-item">
+        <div class="lbl">Fecha</div>
+        <div class="val">{{ reg.hora|date:"d/m/Y" }}</div>
+      </div>
+      <div class="info-item">
+        <div class="lbl">Producto</div>
+        <div class="val">{{ reg.producto.nombre }}</div>
+      </div>
+      <div class="info-item">
+        <div class="lbl">Estado del cargamento</div>
+        <div class="val">
+          {% if reg.tipo == 'completo' %}
+            <span class="tipo-badge tipo-c">✅ Completo</span>
+          {% elif reg.tipo == 'incompleto' %}
+            <span class="tipo-badge tipo-i">⚠️ Incompleto</span>
+          {% else %}
+            <span class="tipo-badge tipo-e">🔀 Especial</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% if reg.observacion %}
+    <div style="margin-top:8px;font-size:12px;color:#666;background:#f8f9fa;padding:6px 10px;border-radius:5px;">
+      <strong>Obs:</strong> {{ reg.observacion }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- TIEMPO DE DESCARGUE -->
+  <div class="tiempo-bar">
+    <div class="ini">
+      <div class="hora">{{ reg.hora|date:"H:i" }}</div>
+      <div class="sub">Hora de ingreso</div>
+    </div>
+    <div class="flecha">
+      <i class="fa fa-arrow-right"></i>
+      <div style="font-size:11px;color:var(--azul);font-weight:700;margin-top:2px;">
+        {{ reg.duracion_minutos }} min
+      </div>
+    </div>
+    <div class="fin">
+      <div class="hora" style="color:var(--verde);">
+        {% if reg.hora_fin_estimada %}{{ reg.hora_fin_estimada|date:"H:i" }}{% else %}—{% endif %}
+      </div>
+      <div class="sub">Salida estimada</div>
+    </div>
+  </div>
+
+  <!-- TOTALES -->
+  <div class="totales">
+    <div class="tot-row">
+      <span class="t-lbl">Palets completos</span>
+      <span class="t-val">{{ reg.palets_completos }}</span>
+    </div>
+    {% if reg.unidades_sueltas > 0 %}
+    <div class="tot-row">
+      <span class="t-lbl">Unidades sueltas</span>
+      <span class="t-val">{{ reg.unidades_sueltas }} uds.</span>
+    </div>
+    {% endif %}
+    <hr style="border-color:rgba(255,255,255,.2);margin:8px 0;"/>
+    <div class="tot-row grande">
+      <span class="t-lbl" style="font-size:13px;">TOTAL PALETS</span>
+      <span class="t-val">{{ reg.palets_equivalentes }}</span>
+    </div>
+  </div>
+
+  <!-- PIE -->
+  <div class="pie">
+    <strong>{{ empresa_nombre }}</strong><br>
+    Documento generado el {{ reg.hora|date:"d/m/Y" }} a las {{ reg.hora|date:"H:i" }}<br>
+    Registro N° {{ reg.id }} — Comprobante de descargue sin valor comercial
+  </div>
+
+  <!-- ACCIONES -->
+  <div class="acciones">
+    <button class="btn-imp" onclick="window.print()">
+      <i class="fa fa-print me-1"></i> Imprimir
+    </button>
+    <button class="btn-wa" onclick="compartirWA()">
+      <i class="fab fa-whatsapp me-1"></i> Compartir
+    </button>
+  </div>
+
+</div>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+<script>
+function compartirWA() {
+  const url = window.location.href;
+  const tel = '{{ reg.chofer_telefono }}'.replace(/\D/g,'').replace(/^0/,'593');
+  const msg = encodeURIComponent(
+    `*{{ empresa_nombre }}*\n` +
+    `Comprobante de descargue N° {{ reg.id }}\n` +
+    `━━━━━━━━━━━━━━\n` +
+    `🏢 Empresa: *{{ reg.empresa.nombre }}*\n` +
+    `📦 Producto: {{ reg.producto.nombre }}\n` +
+    `🪵 Palets: *{{ reg.palets_equivalentes }}*\n` +
+    `🕐 Ingreso: {{ reg.hora|date:"H:i" }}` +
+    `{% if reg.hora_fin_estimada %} → Salida est.: {{ reg.hora_fin_estimada|date:"H:i" }}{% endif %}\n` +
+    `━━━━━━━━━━━━━━\n` +
+    `Ver comprobante: ${url}`
+  );
+  window.open(`https://wa.me/${tel}?text=${msg}`, '_blank');
+}
+</script>
+</body>
+</html>
