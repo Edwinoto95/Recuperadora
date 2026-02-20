@@ -86,6 +86,7 @@ PyPDF2==3.0.1
 pyphen==0.17.2
 python-bidi==0.6.3
 python-dateutil==2.9.0.post0
+python-decouple==3.8
 pytz==2025.2
 PyYAML==6.0.2
 qrcode==8.0
