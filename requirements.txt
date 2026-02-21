@@ -3,7 +3,7 @@ certifi==2024.12.14
 charset-normalizer==3.4.1
 click==8.1.8
 colorama==0.4.6
-dj-database-url==2.2.0
+dj-database-url==3.0.1
 Django==4.2.23
 django-allauth==65.11.0
 et_xmlfile==2.0.0
@@ -37,3 +37,4 @@ weasyprint==65.1
 webencodings==0.5.1
 whitenoise==6.8.2
 xhtml2pdf==0.2.16
+numpy==1.26.4
